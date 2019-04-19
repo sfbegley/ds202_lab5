@@ -1,0 +1,62 @@
+---
+title: "ds202_lab5"
+author: "Sam Begley"
+date: "April 16, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+acc <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/master/hwlabs/fars2017/accident.csv")
+pers <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/master/hwlabs/fars2017/person.csv")
+library(tidyverse)
+```
+##Part 1)
+
+
+```{r 1}
+head(acc)
+names(acc)
+acc$DAY_WEEK <- as.factor(acc$DAY_WEEK)
+levels(acc$DAY_WEEK)
+levels(acc$DAY_WEEK) <- c('Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat')
+```
+
+##Part 2)
+
+
+```{R 2}
+drivers <- pers %>% filter(PER_TYP == 1)
+intersect(names(acc), names(drivers))
+drivers <- drivers %>% select('ST_CASE', 'SEX')
+data <- left_join(acc, drivers, by = 'ST_CASE')
+head(data)
+data$DAY_WEEK <- as.factor(data$DAY_WEEK)
+levels(data$DAY_WEEK) <- c('Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat')
+data$SEX <- as.factor(data$SEX)
+levels(data$SEX) <- c('Male', 'Female', 8, 9)
+```
+
+
+##Part 3)
+
+
+```{r 3}
+counties <- map_data('county')
+names <- readxl::read_xlsx('~/SD_Shortcut/FRPP GLC United States.xlsx')
+names(names) <- c('Territory', 'region', 'State Code', 'City Code', 'City Name', 'COUNTY', 'subregion', 'Country Code', 'Old City Name', 'Date Redord Added')
+names <- names[-1, ]
+names <- names %>% select('region', 'COUNTY', 'subregion')
+counties$region <- toupper(counties$region)
+counties$subregion <- toupper(counties$subregion)
+names <- names %>% mutate(tregion = paste0(region, subregion))
+names <- names %>% distinct(tregion, .keep_all = TRUE)
+counties <- counties %>% mutate(tregion = paste0(region, subregion))
+data2 <- left_join(counties, names, by = 'tregion')
+data2$COUNTY <- as.integer(data2$COUNTY)
+data3 <- data %>% group_by(COUNTY) %>%
+  summarise(count = n_distinct(ST_CASE))
+data4 <- left_join(data2, data3, by = 'COUNTY')
+data4 <- data4 %>% distinct(long, lat, group, 
+                            .keep_all = TRUE)
+```
